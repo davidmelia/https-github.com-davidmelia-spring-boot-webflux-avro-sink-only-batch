@@ -1,8 +1,10 @@
 package tests;
 
+import com.fasterxml.jackson.databind.DatabindException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import example.MyApplication;
 import example.StaticInstrumentEventBatchConsumer;
-import java.util.List;
+import java.io.IOException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,14 +35,20 @@ public class FxRateBatchIntegrationFailingTest {
   
 
   @Test
-  public void testBatch() throws InterruptedException {
+  public void testBatch() throws InterruptedException, Exception, DatabindException, IOException {
     staticInstrumentEventBatchConsumer.getCache().clear();
     stubTrigger.trigger("triggerAvroFxRateEvent");
     Thread.sleep(1000);
-    Message<List<AvroFxRateEvent>> event = staticInstrumentEventBatchConsumer.getCache().get("event");
+    Message<?> cachedEvent = staticInstrumentEventBatchConsumer.getCache().get("event");
+    // OK so cachedEvent should be a List<AvroFxRateEvent> but is actually a byte[] array which
+    // represents a single AvroFxRateEvent
+    AvroFxRateEvent event = new ObjectMapper().readValue((byte[]) cachedEvent.getPayload(), AvroFxRateEvent.class);
     Assertions.assertNotNull(event);
-    Assertions.assertEquals(1, event.getPayload().size());
-    Assertions.assertEquals("GBP", event.getPayload().get(0).getFrom());
+    Assertions.assertEquals("GBP", event.getFrom());
+    Assertions.fail(
+        "the event should be a List<AvroFxRateEvent> but is actually a AvroFxRateEvent as batch-mode doesn't seem to be supported by either Spring Cloud Contract or Spring Cloud Stream Test Binder.");
+
+    //
   }
   
 }
