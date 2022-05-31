@@ -8,7 +8,7 @@ Contract.make {
         triggeredBy('triggerAvroFxRateEvent()')
     }
     outputMessage {
-        sentTo('test')
+        sentTo('fx-rates')
         body(
           
                 [

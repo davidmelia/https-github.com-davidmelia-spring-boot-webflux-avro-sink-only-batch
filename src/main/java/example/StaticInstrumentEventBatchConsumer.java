@@ -1,6 +1,7 @@
 package example;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import lombok.AllArgsConstructor;
@@ -15,19 +16,19 @@ import uk.co.dave.consumer.fxrate.consumer.avro.AvroFxRateEvent;
 @Component
 @AllArgsConstructor
 @Slf4j
-public class StaticInstrumentEventConsumer {
+public class StaticInstrumentEventBatchConsumer {
 
-  private Map<String, Message<AvroFxRateEvent>> cache = new HashMap<>();
+  private Map<String, Message<List<AvroFxRateEvent>>> cache = new HashMap<>();
 
   @Bean
-  public Function<Flux<Message<AvroFxRateEvent>>, Mono<Void>> fxRates() {
+  public Function<Flux<Message<List<AvroFxRateEvent>>>, Mono<Void>> fxRatesBatch() {
     return events -> events.flatMapSequential(event -> {
-      return Mono.just(event).doOnNext(p -> log.info("Processing: {}", p)).doOnNext(p -> cache.put("event", p))
+      return Mono.just(event).doOnNext(p -> log.info("Processing Batch: {}", p)).doOnNext(p -> cache.put("event", p))
           .then();
     }, 1).then();
   }
 
-  public Map<String, Message<AvroFxRateEvent>> getCache() {
+  public Map<String, Message<List<AvroFxRateEvent>>> getCache() {
     return cache;
   }
   

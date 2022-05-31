@@ -1,6 +1,8 @@
 package populator;
 
 import example.MyApplication;
+import example.StaticInstrumentEventConsumer;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,8 +13,10 @@ import org.springframework.cloud.contract.stubrunner.spring.AutoConfigureStubRun
 import org.springframework.cloud.contract.stubrunner.spring.StubRunnerProperties.StubsMode;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.context.annotation.Import;
+import org.springframework.messaging.Message;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import uk.co.dave.consumer.fxrate.consumer.avro.AvroFxRateEvent;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = {MyApplication.class}, webEnvironment = WebEnvironment.MOCK)
@@ -23,11 +27,18 @@ public class SpringCloudContractKafkaIssuesTest {
   @Autowired
   private StubTrigger stubTrigger;
 
-
+  @Autowired
+  private StaticInstrumentEventConsumer staticInstrumentEventConsumer;
+  
+  
   @Test
-  public void testAvroFxRateEvent_FailsBecauseAckIsNull() {
+  public void testAvroFxRateEvent_FailsBecauseAckIsNull() throws InterruptedException {
+    staticInstrumentEventConsumer.getCache().clear();
     stubTrigger.trigger("triggerAvroFxRateEvent");
+    Thread.sleep(1000);
+    Message<AvroFxRateEvent> event = staticInstrumentEventConsumer.getCache().get("event");
+    Assertions.assertNotNull(event);
+    Assertions.assertEquals("GBP", event.getPayload().getFrom());
   }
-
   
 }
