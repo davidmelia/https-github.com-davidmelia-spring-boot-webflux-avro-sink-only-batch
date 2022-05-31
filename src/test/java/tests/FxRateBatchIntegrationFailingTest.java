@@ -1,7 +1,8 @@
-package populator;
+package tests;
 
 import example.MyApplication;
-import example.StaticInstrumentEventConsumer;
+import example.StaticInstrumentEventBatchConsumer;
+import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,26 +20,27 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import uk.co.dave.consumer.fxrate.consumer.avro.AvroFxRateEvent;
 
 @ExtendWith(SpringExtension.class)
-@SpringBootTest(classes = {MyApplication.class}, webEnvironment = WebEnvironment.MOCK)
+@SpringBootTest(classes = {MyApplication.class}, webEnvironment = WebEnvironment.NONE)
 @Import(TestChannelBinderConfiguration.class)
 @AutoConfigureStubRunner(stubsMode = StubsMode.CLASSPATH, ids = {"uk.co.dave:fx-producer:+:stubs"})
 @TestPropertySource(properties = "spring.cloud.stream.bindings.fxRates-in-0.consumer.use-native-decoding=false")
-public class SpringCloudContractKafkaIssuesTest {
+public class FxRateBatchIntegrationFailingTest {
   @Autowired
   private StubTrigger stubTrigger;
 
   @Autowired
-  private StaticInstrumentEventConsumer staticInstrumentEventConsumer;
+  private StaticInstrumentEventBatchConsumer staticInstrumentEventBatchConsumer;
   
-  
+
   @Test
-  public void testAvroFxRateEvent_FailsBecauseAckIsNull() throws InterruptedException {
-    staticInstrumentEventConsumer.getCache().clear();
+  public void testBatch() throws InterruptedException {
+    staticInstrumentEventBatchConsumer.getCache().clear();
     stubTrigger.trigger("triggerAvroFxRateEvent");
     Thread.sleep(1000);
-    Message<AvroFxRateEvent> event = staticInstrumentEventConsumer.getCache().get("event");
+    Message<List<AvroFxRateEvent>> event = staticInstrumentEventBatchConsumer.getCache().get("event");
     Assertions.assertNotNull(event);
-    Assertions.assertEquals("GBP", event.getPayload().getFrom());
+    Assertions.assertEquals(1, event.getPayload().size());
+    Assertions.assertEquals("GBP", event.getPayload().get(0).getFrom());
   }
   
 }
