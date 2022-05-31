@@ -33,7 +33,6 @@ public class FxRateBatchIntegrationFailingTest {
   @Autowired
   private StaticInstrumentEventBatchConsumer staticInstrumentEventBatchConsumer;
   
-
   @Test
   public void testBatch() throws InterruptedException, Exception, DatabindException, IOException {
     staticInstrumentEventBatchConsumer.getCache().clear();
